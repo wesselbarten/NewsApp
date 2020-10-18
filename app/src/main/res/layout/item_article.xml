@@ -4,8 +4,8 @@
     <data>
 
         <variable
-            name="newsItem"
-            type="nl.wesselbarten.newsapp.domain.model.NewsItem" />
+            name="article"
+            type="nl.wesselbarten.newsapp.domain.model.Article" />
     </data>
 
     <androidx.appcompat.widget.LinearLayoutCompat

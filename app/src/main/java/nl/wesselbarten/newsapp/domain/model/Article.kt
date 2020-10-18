@@ -1,4 +1,4 @@
 package nl.wesselbarten.newsapp.domain.model
 
-class NewsItem {
+class Article {
 }
