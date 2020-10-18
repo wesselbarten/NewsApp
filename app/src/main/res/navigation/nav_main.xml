@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/destination_news_list">
+
+    <fragment
+        android:id="@+id/destination_news_list"
+        android:name="nl.wesselbarten.newsapp.news.list.NewsListFragment"
+        android:label="News List"
+        tools:layout="@layout/fragment_news_list">
+
+        <action android:id="@+id/destination_news_list_to_destination_news_detail"
+            app:destination="@id/destination_news_detail" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/destination_news_detail"
+        android:name="nl.wesselbarten.newsapp.news.detail.NewsDetailFragment"
+        android:label="News Detail"
+        tools:layout="@layout/fragment_news_detail" />
+
+</navigation>
