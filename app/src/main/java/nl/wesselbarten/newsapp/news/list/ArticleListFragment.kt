@@ -16,7 +16,7 @@ import nl.wesselbarten.newsapp.news.NewsViewModel
 @AndroidEntryPoint
 class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
 
-    private val newsItemsAdapter = ArticlesAdapter(this)
+    private val articlesAdapter = ArticlesAdapter(this)
     private val viewModel: NewsViewModel by viewModels({ requireActivity() })
 
     private lateinit var binding: FragmentArticleListBinding
@@ -28,10 +28,26 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
     ): View? {
         binding = FragmentArticleListBinding.inflate(inflater, container, false)
         binding.lifecycleOwner = this
+        binding.rcvArticles.adapter = articlesAdapter
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.getArticles()
+        }
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupLiveData()
+    }
+
     override fun onArticleClick(article: Article) {
-        Toast.makeText(requireContext(), "TODO: OnNewsItemClick", Toast.LENGTH_LONG).show()
+        Toast.makeText(requireContext(), "TODO: OnArticleClick", Toast.LENGTH_LONG).show()
+    }
+
+    private fun setupLiveData() {
+        viewModel.articles.observe(viewLifecycleOwner, {
+            binding.swipeRefresh.isRefreshing = false
+            articlesAdapter.submitList(it)
+        })
     }
 }

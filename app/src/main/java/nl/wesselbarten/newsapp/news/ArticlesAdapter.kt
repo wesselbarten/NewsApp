@@ -10,22 +10,22 @@ import nl.wesselbarten.newsapp.domain.model.Article
 
 class ArticlesAdapter(
     private val articleClickListener: ArticleClickListener
-) : ListAdapter<Article, ArticlesAdapter.NewsItemViewHolder>(ArticleItemCallback) {
+) : ListAdapter<Article, ArticlesAdapter.ArticleViewHolder>(ArticleItemCallback) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NewsItemViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArticleViewHolder {
         val itemBinding = ItemArticleBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
-        return NewsItemViewHolder(itemBinding)
+        return ArticleViewHolder(itemBinding)
     }
 
-    override fun onBindViewHolder(holder: NewsItemViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ArticleViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    inner class NewsItemViewHolder(
+    inner class ArticleViewHolder(
         private val itemBinding: ItemArticleBinding
     ) : RecyclerView.ViewHolder(itemBinding.root) {
 
@@ -40,11 +40,11 @@ class ArticlesAdapter(
     object ArticleItemCallback : DiffUtil.ItemCallback<Article>() {
 
         override fun areItemsTheSame(oldItem: Article, newItem: Article): Boolean {
-            TODO("Not yet implemented")
+            return oldItem.title == newItem.title
         }
 
         override fun areContentsTheSame(oldItem: Article, newItem: Article): Boolean {
-            TODO("Not yet implemented")
+            return oldItem.areContentsTheSame(newItem)
         }
     }
 

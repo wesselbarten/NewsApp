@@ -1,8 +1,9 @@
 package nl.wesselbarten.newsapp.data.network
 
-import android.net.Uri
 import com.google.gson.Gson
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -29,15 +30,25 @@ class RestClient @Inject constructor(
                     it.addInterceptor(loggingInterceptor)
                 }
             }
-            .build()
+            .addInterceptor(object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response {
+                    val originalRequest = chain.request()
+                    val url = originalRequest.url.newBuilder()
+                        .addQueryParameter(PARAMETER_API_KEY, newsApiKey)
+                        .build()
 
-        val url = Uri.Builder()
-            .path(baseUrl)
-            .appendQueryParameter(PARAMETER_API_KEY, newsApiKey)
+                    val request = originalRequest.newBuilder()
+                        .url(url)
+                        .header("Content-Type", "application/json")
+                        .build()
+
+                    return chain.proceed(request)
+                }
+            })
             .build()
 
         retrofit = Retrofit.Builder()
-            .baseUrl(url.toString())
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
