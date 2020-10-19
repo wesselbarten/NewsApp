@@ -11,8 +11,10 @@
         android:label="Article List"
         tools:layout="@layout/fragment_article_list">
 
-        <action android:id="@+id/destination_article_list_to_destination_article_detail"
-            app:destination="@id/destination_article_detail" />
+        <action android:id="@+id/action_destination_article_list_to_destination_article_detail"
+            app:destination="@id/destination_article_detail"
+            app:enterAnim="@anim/slide_in_right"
+            app:popExitAnim="@anim/slide_out_right"/>
 
     </fragment>
 

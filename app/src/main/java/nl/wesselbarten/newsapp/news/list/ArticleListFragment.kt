@@ -4,14 +4,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import nl.wesselbarten.newsapp.R
 import nl.wesselbarten.newsapp.databinding.FragmentArticleListBinding
 import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.news.ArticlesAdapter
 import nl.wesselbarten.newsapp.news.NewsViewModel
+import nl.wesselbarten.newsapp.util.DividerItemDecoration
+import nl.wesselbarten.newsapp.util.event.EventObserver
 
 @AndroidEntryPoint
 class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
@@ -29,6 +33,7 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
         binding = FragmentArticleListBinding.inflate(inflater, container, false)
         binding.lifecycleOwner = this
         binding.rcvArticles.adapter = articlesAdapter
+        binding.rcvArticles.addItemDecoration(DividerItemDecoration(requireContext()))
         binding.swipeRefresh.setOnRefreshListener {
             viewModel.getArticles()
         }
@@ -41,7 +46,8 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
     }
 
     override fun onArticleClick(article: Article) {
-        Toast.makeText(requireContext(), "TODO: OnArticleClick", Toast.LENGTH_LONG).show()
+        viewModel.selectArticle(article)
+        findNavController().navigate(R.id.action_destination_article_list_to_destination_article_detail)
     }
 
     private fun setupLiveData() {
@@ -49,5 +55,13 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
             binding.swipeRefresh.isRefreshing = false
             articlesAdapter.submitList(it)
         })
+        viewModel.getArticlesFailed.observe(viewLifecycleOwner, EventObserver {
+            val errorMessage = getString(R.string.error_unable_to_get_articles)
+            showErrorMessage(errorMessage)
+        })
+    }
+
+    private fun showErrorMessage(errorMessage: String) {
+        Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG).show()
     }
 }

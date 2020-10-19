@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import nl.wesselbarten.newsapp.databinding.FragmentArticleDetailBinding
+import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.news.NewsViewModel
 
 @AndroidEntryPoint
@@ -24,6 +25,22 @@ class ArticleDetailFragment : Fragment() {
     ): View? {
         binding = FragmentArticleDetailBinding.inflate(inflater, container, false)
         binding.lifecycleOwner = this
+        binding.btnBack.setOnClickListener {
+            requireActivity().onBackPressed()
+        }
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupLiveData()
+    }
+
+    private fun setupLiveData() {
+        viewModel.selectedArticle.observe(viewLifecycleOwner, this::renderArticleContent)
+    }
+
+    private fun renderArticleContent(article: Article) {
+        binding.article = article
     }
 }
