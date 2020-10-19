@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import nl.wesselbarten.newsapp.R
 import nl.wesselbarten.newsapp.databinding.ItemArticleBinding
 import nl.wesselbarten.newsapp.domain.model.Article
 
@@ -33,6 +35,17 @@ class ArticlesAdapter(
             itemBinding.article = article
             itemBinding.root.setOnClickListener {
                 articleClickListener.onArticleClick(article)
+            }
+
+            if (article.imageUrl != null) {
+                Glide.with(itemView)
+                    .load(article.imageUrl)
+                    .into(itemBinding.ivArticleImage)
+            } else {
+                Glide.with(itemView)
+                    .clear(itemBinding.ivArticleImage)
+
+                itemBinding.ivArticleImage.setImageResource(R.drawable.image_unavailable)
             }
         }
     }

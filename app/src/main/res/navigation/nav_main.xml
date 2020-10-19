@@ -13,6 +13,7 @@
 
         <action android:id="@+id/action_destination_article_list_to_destination_article_detail"
             app:destination="@id/destination_article_detail"
+            app:popUpTo="@id/destination_article_list"
             app:enterAnim="@anim/slide_in_right"
             app:popExitAnim="@anim/slide_out_right"/>
 

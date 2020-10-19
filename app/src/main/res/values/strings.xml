@@ -2,4 +2,5 @@
     <string name="app_name">News App</string>
     <string name="article_list_title">News</string>
     <string name="error_unable_to_get_articles">Unable to retrieve articles</string>
+    <string name="action_view_article">View article</string>
 </resources>
