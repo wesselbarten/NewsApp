@@ -35,7 +35,7 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
         binding.rcvArticles.adapter = articlesAdapter
         binding.rcvArticles.addItemDecoration(DividerItemDecoration(requireContext()))
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.getArticles()
+            viewModel.refreshTopHeadlines()
         }
         return binding.root
     }
@@ -43,6 +43,11 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupLiveData()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.getTopHeadLines()
     }
 
     override fun onArticleClick(article: Article) {

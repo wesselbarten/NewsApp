@@ -8,13 +8,15 @@ data class Article(
     val url: String,
     val imageUrl: String?,
     val publishedAt: String,
-    val content: String?
+    val content: String?,
+    var hasViewed: Boolean = false
 ) {
 
     fun areContentsTheSame(other: Article): Boolean {
         return author == other.author &&
                 description == other.description &&
                 publishedAt == other.publishedAt &&
-                content == other.content
+                content == other.content &&
+                hasViewed == other.hasViewed
     }
 }

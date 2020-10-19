@@ -13,7 +13,21 @@ class DefaultArticleRepository @Inject constructor(
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ArticleRepository {
 
-    override suspend fun getTopHeadlines(): List<Article> = withContext(defaultDispatcher) {
-        articlesDataSource.getTopHeadlines()
+    private var topHeadLinesArticlesCache: List<Article>? = null
+    private val viewedArticleTitles = ArrayList<String>()
+
+    override suspend fun getTopHeadlines(forceUpdate: Boolean): List<Article> = withContext(defaultDispatcher) {
+        if (forceUpdate || topHeadLinesArticlesCache == null) {
+            topHeadLinesArticlesCache = articlesDataSource.getTopHeadlines()
+        }
+        topHeadLinesArticlesCache!!.onEach { article ->
+            article.hasViewed = viewedArticleTitles.contains(article.title)
+        }
+    }
+
+    override suspend fun setViewedArticle(article: Article) {
+        withContext(defaultDispatcher) {
+            viewedArticleTitles.add(article.title)
+        }
     }
 }

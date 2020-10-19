@@ -23,21 +23,28 @@ class NewsViewModel @ViewModelInject constructor(
     private val _selectedArticle = MutableLiveData<Article>()
     val selectedArticle: LiveData<Article> get() = _selectedArticle
 
-    init {
-        getArticles()
+    fun getTopHeadLines() {
+        getTopHeadLines(false)
     }
 
-    fun getArticles() {
-        viewModelScope.launch {
-             try {
-                 _articles.value = articleRepository.getTopHeadlines()
-             } catch (e: Exception) {
-                 _getArticlesFailed.value = EmptyEvent
-             }
-        }
+    fun refreshTopHeadlines() {
+        getTopHeadLines(true)
     }
 
     fun selectArticle(article: Article) {
+        viewModelScope.launch {
+            articleRepository.setViewedArticle(article)
+        }
         _selectedArticle.value = article
+    }
+
+    private fun getTopHeadLines(forceUpdate: Boolean) {
+        viewModelScope.launch {
+            try {
+                _articles.value = articleRepository.getTopHeadlines(forceUpdate)
+            } catch (e: Exception) {
+                _getArticlesFailed.value = EmptyEvent
+            }
+        }
     }
 }
