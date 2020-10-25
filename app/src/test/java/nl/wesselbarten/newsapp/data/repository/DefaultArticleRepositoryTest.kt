@@ -5,12 +5,17 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import dev.olog.flow.test.observer.test
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
+import nl.wesselbarten.newsapp.data.Result
 import nl.wesselbarten.newsapp.data.source.ArticlesDataSource
 import nl.wesselbarten.newsapp.domain.model.Article
-import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class DefaultArticleRepositoryTest {
@@ -24,7 +29,7 @@ class DefaultArticleRepositoryTest {
 
         val mockArticlesDataSource = mock<ArticlesDataSource> {
             whenever(mock.getTopHeadlines())
-                .thenReturn(articles)
+                .thenReturn(Result.Success(articles))
         }
 
         val articleRepository = DefaultArticleRepository(
@@ -32,37 +37,27 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        val articlesResult = articleRepository.getTopHeadlines(false)
-
-        assertEquals(articles.size, articlesResult.size)
-        assertEquals(articles.first().title, articlesResult.first().title)
-        verify(mockArticlesDataSource, times(1)).getTopHeadlines()
-    }
-
-    @Test(expected = Exception::class)
-    fun `test get top headlines throws exception`() = runBlockingTest {
-        val mockArticlesDataSource = mock<ArticlesDataSource> {
-            whenever(mock.getTopHeadlines())
-                .thenThrow(Exception())
+        suspendCoroutine<Unit> { continuation ->
+            this.launch {
+                articleRepository.getTopHeadLines().test(this) {
+                    assertNoErrors()
+                    assertNotComplete()
+                    assertValue { it is Result.Success }
+                    assertValue { (it as Result.Success).data.size == articles.size }
+                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                    continuation.resume(Unit)
+                }
+            }
         }
-
-        val articleRepository = DefaultArticleRepository(
-            mockArticlesDataSource,
-            testDispatcher
-        )
-
-        articleRepository.getTopHeadlines(false)
 
         verify(mockArticlesDataSource, times(1)).getTopHeadlines()
     }
 
     @Test
-    fun `test get top headlines from cache is successful`() = runBlockingTest {
-        val articles = listOf(fixture<Article>())
-
+    fun `test get top headlines returns error result`() = runBlockingTest {
         val mockArticlesDataSource = mock<ArticlesDataSource> {
             whenever(mock.getTopHeadlines())
-                .thenReturn(articles)
+                .thenReturn(Result.Error(Exception()))
         }
 
         val articleRepository = DefaultArticleRepository(
@@ -70,24 +65,20 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        val articlesFirstResult = articleRepository.getTopHeadlines(false)
-        assertEquals(articles.size, articlesFirstResult.size)
-        assertEquals(articles.first().title, articlesFirstResult.first().title)
-
-        val articlesSecondResult = articleRepository.getTopHeadlines(false)
-        assertEquals(articles.size, articlesSecondResult.size)
-        assertEquals(articles.first().title, articlesSecondResult.first().title)
+        articleRepository.getTopHeadLines().test(this) {
+            assertValue { it is Result.Error }
+        }
 
         verify(mockArticlesDataSource, times(1)).getTopHeadlines()
     }
 
     @Test
-    fun `test force update get top headlines is successful`() = runBlockingTest {
+    fun `test get top headlines from cache returns successful result`() = runBlockingTest(testDispatcher) {
         val articles = listOf(fixture<Article>())
 
         val mockArticlesDataSource = mock<ArticlesDataSource> {
             whenever(mock.getTopHeadlines())
-                .thenReturn(articles)
+                .thenReturn(Result.Success(articles))
         }
 
         val articleRepository = DefaultArticleRepository(
@@ -95,13 +86,77 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        val articlesFirstResult = articleRepository.getTopHeadlines(false)
-        assertEquals(articles.size, articlesFirstResult.size)
-        assertEquals(articles.first().title, articlesFirstResult.first().title)
+        suspendCoroutine<Unit> { continuation ->
+            this.launch {
+                articleRepository.getTopHeadLines().test(this) {
+                    assertNoErrors()
+                    assertNotComplete()
+                    assertValue { it is Result.Success }
+                    assertValue { (it as Result.Success).data.size == articles.size }
+                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                    continuation.resume(Unit)
+                }
+            }
+        }
 
-        val articlesSecondResult = articleRepository.getTopHeadlines(true)
-        assertEquals(articles.size, articlesSecondResult.size)
-        assertEquals(articles.first().title, articlesSecondResult.first().title)
+        suspendCoroutine<Unit> { continuation ->
+            this.launch {
+                articleRepository.getTopHeadLines().test(this) {
+                    assertNoErrors()
+                    assertNotComplete()
+                    assertValue { it is Result.Success }
+                    assertValue { (it as Result.Success).data.size == articles.size }
+                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                    continuation.resume(Unit)
+                }
+            }
+        }
+
+        verify(mockArticlesDataSource, times(1)).getTopHeadlines()
+    }
+
+    @Test
+    fun `test refresh top headlines returns successful result`() = runBlockingTest(testDispatcher) {
+        val articles = listOf(fixture<Article>())
+
+        val mockArticlesDataSource = mock<ArticlesDataSource> {
+            whenever(mock.getTopHeadlines())
+                .thenReturn(Result.Success(articles))
+        }
+
+        val articleRepository = DefaultArticleRepository(
+            mockArticlesDataSource,
+            testDispatcher
+        )
+
+        suspendCoroutine<Unit> { continuation ->
+            this.launch {
+                articleRepository.getTopHeadLines().test(this) {
+                    assertNoErrors()
+                    assertNotComplete()
+                    assertValue { it is Result.Success }
+                    assertValue { (it as Result.Success).data.size == articles.size }
+                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                    continuation.resume(Unit)
+                }
+            }
+        }
+
+        val refreshResult = articleRepository.refreshTopHeadLines()
+        assertTrue(refreshResult is Result.Success)
+
+        suspendCoroutine<Unit> { continuation ->
+            this.launch {
+                articleRepository.getTopHeadLines().test(this) {
+                    assertNoErrors()
+                    assertNotComplete()
+                    assertValue { it is Result.Success }
+                    assertValue { (it as Result.Success).data.size == articles.size }
+                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                    continuation.resume(Unit)
+                }
+            }
+        }
 
         verify(mockArticlesDataSource, times(2)).getTopHeadlines()
     }

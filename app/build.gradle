@@ -90,6 +90,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.1'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    testImplementation 'com.github.ologe:flow-test-observer:1.4.1'
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
     testImplementation 'com.appmattus.fixture:fixture-kotlintest:0.7.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'

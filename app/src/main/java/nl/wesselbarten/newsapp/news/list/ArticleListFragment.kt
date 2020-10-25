@@ -45,11 +45,6 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
         setupLiveData()
     }
 
-    override fun onStart() {
-        super.onStart()
-        viewModel.getTopHeadLines()
-    }
-
     override fun onArticleClick(article: Article) {
         viewModel.selectArticle(article)
         findNavController().navigate(R.id.action_destination_article_list_to_destination_article_detail)
@@ -61,6 +56,7 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
             articlesAdapter.submitList(it)
         })
         viewModel.getArticlesFailed.observe(viewLifecycleOwner, EventObserver {
+            binding.swipeRefresh.isRefreshing = false
             val errorMessage = getString(R.string.error_unable_to_get_articles)
             showErrorMessage(errorMessage)
         })

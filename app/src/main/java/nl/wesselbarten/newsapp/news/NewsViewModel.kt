@@ -5,7 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import nl.wesselbarten.newsapp.data.Result
 import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.domain.repository.ArticleRepository
 import nl.wesselbarten.newsapp.util.event.EmptyEvent
@@ -23,12 +25,30 @@ class NewsViewModel @ViewModelInject constructor(
     private val _selectedArticle = MutableLiveData<Article>()
     val selectedArticle: LiveData<Article> get() = _selectedArticle
 
-    fun getTopHeadLines() {
-        getTopHeadLines(false)
+    init {
+        viewModelScope.launch {
+            articleRepository.getTopHeadLines()
+                .collectLatest {
+                    when (it) {
+                        is Result.Success -> {
+                            _articles.value = it.data
+                        }
+                        is Result.Error -> {
+                            _getArticlesFailed.value = EmptyEvent
+                        }
+                    }
+                }
+        }
     }
 
     fun refreshTopHeadlines() {
-        getTopHeadLines(true)
+        viewModelScope.launch {
+            try {
+                articleRepository.refreshTopHeadLines()
+            } catch (e: Exception) {
+                _getArticlesFailed.value = EmptyEvent
+            }
+        }
     }
 
     fun selectArticle(article: Article) {
@@ -36,15 +56,5 @@ class NewsViewModel @ViewModelInject constructor(
             articleRepository.setViewedArticle(article)
         }
         _selectedArticle.value = article
-    }
-
-    private fun getTopHeadLines(forceUpdate: Boolean) {
-        viewModelScope.launch {
-            try {
-                _articles.value = articleRepository.getTopHeadlines(forceUpdate)
-            } catch (e: Exception) {
-                _getArticlesFailed.value = EmptyEvent
-            }
-        }
     }
 }

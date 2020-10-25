@@ -2,32 +2,71 @@ package nl.wesselbarten.newsapp.data.repository
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import nl.wesselbarten.newsapp.data.Result
+import nl.wesselbarten.newsapp.data.onResultSuccess
 import nl.wesselbarten.newsapp.data.source.ArticlesDataSource
 import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.domain.repository.ArticleRepository
+import nl.wesselbarten.newsapp.util.isNull
 import javax.inject.Inject
 
+@Suppress("EXPERIMENTAL_API_USAGE")
 class DefaultArticleRepository @Inject constructor(
     private val articlesDataSource: ArticlesDataSource,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ArticleRepository {
 
-    private var topHeadLinesArticlesCache: List<Article>? = null
-    private val viewedArticleTitles = ArrayList<String>()
+    private val topHeadLinesChannel = ConflatedBroadcastChannel<Result<List<Article>>>()
+    private val viewedArticleTitlesChannel = ConflatedBroadcastChannel<List<String>>(emptyList())
 
-    override suspend fun getTopHeadlines(forceUpdate: Boolean): List<Article> = withContext(defaultDispatcher) {
-        if (forceUpdate || topHeadLinesArticlesCache == null) {
-            topHeadLinesArticlesCache = articlesDataSource.getTopHeadlines()
+    override suspend fun setViewedArticle(article: Article): Result<Unit> =
+        withContext(defaultDispatcher) {
+            val newList = viewedArticleTitlesChannel.valueOrNull
+                ?.toMutableList()
+                ?.also { it.add(article.title) }
+                ?: listOf(article.title)
+
+            viewedArticleTitlesChannel.send(newList)
+
+            Result.Success(Unit)
         }
-        topHeadLinesArticlesCache!!.onEach { article ->
-            article.hasViewed = viewedArticleTitles.contains(article.title)
+
+    override fun getTopHeadLines(): Flow<Result<List<Article>>> {
+        val topHeadLinesFlow = flow {
+            if (topHeadLinesChannel.valueOrNull.isNull()) {
+                refreshTopHeadLines()
+            }
+            emitAll(topHeadLinesChannel.asFlow())
         }
+
+        return combine(
+            topHeadLinesFlow,
+            viewedArticleTitlesChannel.asFlow()
+        ) { articlesResult, viewedTitles ->
+            articlesResult.onResultSuccess { articles ->
+                articles.map {
+                    Article(
+                        it.source,
+                        it.author,
+                        it.title,
+                        it.description,
+                        it.url,
+                        it.imageUrl,
+                        it.publishedAt,
+                        it.content,
+                        viewedTitles.contains(it.title)
+                    )
+                }
+            }
+        }.flowOn(defaultDispatcher)
     }
 
-    override suspend fun setViewedArticle(article: Article) {
-        withContext(defaultDispatcher) {
-            viewedArticleTitles.add(article.title)
-        }
+    override suspend fun refreshTopHeadLines(): Result<Unit> = withContext(defaultDispatcher) {
+        val result = articlesDataSource.getTopHeadlines()
+        topHeadLinesChannel.send(result)
+        result.onResultSuccess { Unit }
     }
 }
