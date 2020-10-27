@@ -1,4 +1,4 @@
-package nl.wesselbarten.newsapp.news
+package nl.wesselbarten.newsapp.presentation.news
 
 import android.view.LayoutInflater
 import android.view.ViewGroup

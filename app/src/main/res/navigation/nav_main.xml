@@ -7,13 +7,12 @@
 
     <fragment
         android:id="@+id/destination_article_list"
-        android:name="nl.wesselbarten.newsapp.news.list.ArticleListFragment"
+        android:name="nl.wesselbarten.newsapp.presentation.news.list.ArticleListFragment"
         android:label="Article List"
         tools:layout="@layout/fragment_article_list">
 
         <action android:id="@+id/action_destination_article_list_to_destination_article_detail"
             app:destination="@id/destination_article_detail"
-            app:popUpTo="@id/destination_article_list"
             app:enterAnim="@anim/slide_in_right"
             app:popExitAnim="@anim/slide_out_right"/>
 
@@ -21,7 +20,7 @@
 
     <fragment
         android:id="@+id/destination_article_detail"
-        android:name="nl.wesselbarten.newsapp.news.detail.ArticleDetailFragment"
+        android:name="nl.wesselbarten.newsapp.presentation.news.detail.ArticleDetailFragment"
         android:label="Article Detail"
         tools:layout="@layout/fragment_article_detail" />
 

@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import nl.wesselbarten.newsapp.data.Result
-import nl.wesselbarten.newsapp.data.onResultSuccess
+import nl.wesselbarten.newsapp.data.onSuccess
 import nl.wesselbarten.newsapp.data.source.ArticlesDataSource
 import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.domain.repository.ArticleRepository
@@ -37,7 +37,8 @@ class DefaultArticleRepository @Inject constructor(
     override fun getTopHeadLines(): Flow<Result<List<Article>>> {
         val topHeadLinesFlow = flow {
             if (topHeadLinesChannel.valueOrNull.isNull()) {
-                refreshTopHeadLines()
+                val result = articlesDataSource.getTopHeadlines()
+                topHeadLinesChannel.send(result)
             }
             emitAll(topHeadLinesChannel.asFlow())
         }
@@ -46,7 +47,7 @@ class DefaultArticleRepository @Inject constructor(
             topHeadLinesFlow,
             viewedArticleTitlesChannel.asFlow()
         ) { articlesResult, viewedTitles ->
-            articlesResult.onResultSuccess { articles ->
+            articlesResult.onSuccess { articles ->
                 articles.map {
                     Article(
                         it.source,
@@ -66,7 +67,6 @@ class DefaultArticleRepository @Inject constructor(
 
     override suspend fun refreshTopHeadLines(): Result<Unit> = withContext(defaultDispatcher) {
         val result = articlesDataSource.getTopHeadlines()
-        topHeadLinesChannel.send(result)
-        result.onResultSuccess { Unit }
+        result.onSuccess { topHeadLinesChannel.send(result) }
     }
 }

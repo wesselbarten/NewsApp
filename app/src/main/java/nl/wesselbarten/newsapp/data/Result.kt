@@ -27,7 +27,7 @@ suspend fun <T> executeApiCall(action: suspend () -> T ): Result<T> {
     }
 }
 
-suspend fun <T, R> Result<T>.onResultSuccess(action: suspend (T) -> R): Result<R> {
+suspend fun <T, R> Result<T>.onSuccess(action: suspend (T) -> R): Result<R> {
     return when (this) {
         is Result.Success -> Result.Success(action(this.data))
         is Result.Error -> Result.Error(this.exception)

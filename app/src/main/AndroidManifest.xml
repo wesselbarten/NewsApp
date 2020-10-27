@@ -15,7 +15,7 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.NewsApp">
 
-        <activity android:name=".news.NewsActivity">
+        <activity android:name="nl.wesselbarten.newsapp.presentation.news.NewsActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

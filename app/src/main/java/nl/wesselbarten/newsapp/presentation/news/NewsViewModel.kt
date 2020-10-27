@@ -1,4 +1,4 @@
-package nl.wesselbarten.newsapp.news
+package nl.wesselbarten.newsapp.presentation.news
 
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
@@ -10,17 +10,19 @@ import kotlinx.coroutines.launch
 import nl.wesselbarten.newsapp.data.Result
 import nl.wesselbarten.newsapp.domain.model.Article
 import nl.wesselbarten.newsapp.domain.repository.ArticleRepository
-import nl.wesselbarten.newsapp.util.event.EmptyEvent
+import nl.wesselbarten.newsapp.presentation.error.ErrorHandler
+import nl.wesselbarten.newsapp.util.event.Event
 
 class NewsViewModel @ViewModelInject constructor(
-    private val articleRepository: ArticleRepository
+    private val articleRepository: ArticleRepository,
+    private val errorHandler: ErrorHandler
 ) : ViewModel() {
 
-    private val _articles = MutableLiveData<List<Article>>()
-    val articles: LiveData<List<Article>> get() = _articles
+    private val _getTopHeadLinesState = MutableLiveData<GetTopHeadLinesState>()
+    val getTopHeadLinesState: LiveData<GetTopHeadLinesState> get() = _getTopHeadLinesState
 
-    private val _getArticlesFailed = MutableLiveData<EmptyEvent>()
-    val getArticlesFailed: LiveData<EmptyEvent> get() = _getArticlesFailed
+    private val _refreshTopHeadLinesAction = MutableLiveData<Event<RefreshTopHeadLinesAction>>()
+    val refreshTopHeadLinesAction: MutableLiveData<Event<RefreshTopHeadLinesAction>> get() = _refreshTopHeadLinesAction
 
     private val _selectedArticle = MutableLiveData<Article>()
     val selectedArticle: LiveData<Article> get() = _selectedArticle
@@ -31,10 +33,10 @@ class NewsViewModel @ViewModelInject constructor(
                 .collectLatest {
                     when (it) {
                         is Result.Success -> {
-                            _articles.value = it.data
+                            _getTopHeadLinesState.value = GetTopHeadLinesState.Success(it.data)
                         }
                         is Result.Error -> {
-                            _getArticlesFailed.value = EmptyEvent
+                            _getTopHeadLinesState.value = GetTopHeadLinesState.Error
                         }
                     }
                 }
@@ -43,11 +45,14 @@ class NewsViewModel @ViewModelInject constructor(
 
     fun refreshTopHeadlines() {
         viewModelScope.launch {
-            try {
-                articleRepository.refreshTopHeadLines()
-            } catch (e: Exception) {
-                _getArticlesFailed.value = EmptyEvent
+            val action = when (articleRepository.refreshTopHeadLines()) {
+                is Result.Success -> RefreshTopHeadLinesAction.Success
+                is Result.Error -> {
+                    val errorMessage = errorHandler.getErrorMessage(ErrorHandler.REFRESH_TOP_HEADLINES_FAILED)
+                    RefreshTopHeadLinesAction.Error(errorMessage)
+                }
             }
+            _refreshTopHeadLinesAction.value = Event(action)
         }
     }
 

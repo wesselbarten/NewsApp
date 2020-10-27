@@ -1,4 +1,4 @@
-package nl.wesselbarten.newsapp.news.list
+package nl.wesselbarten.newsapp.presentation.news.list
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,8 +12,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import nl.wesselbarten.newsapp.R
 import nl.wesselbarten.newsapp.databinding.FragmentArticleListBinding
 import nl.wesselbarten.newsapp.domain.model.Article
-import nl.wesselbarten.newsapp.news.ArticlesAdapter
-import nl.wesselbarten.newsapp.news.NewsViewModel
+import nl.wesselbarten.newsapp.presentation.news.ArticlesAdapter
+import nl.wesselbarten.newsapp.presentation.news.GetTopHeadLinesState
+import nl.wesselbarten.newsapp.presentation.news.NewsViewModel
+import nl.wesselbarten.newsapp.presentation.news.RefreshTopHeadLinesAction
 import nl.wesselbarten.newsapp.util.DividerItemDecoration
 import nl.wesselbarten.newsapp.util.event.EventObserver
 
@@ -51,15 +53,33 @@ class ArticleListFragment : Fragment(), ArticlesAdapter.ArticleClickListener {
     }
 
     private fun setupLiveData() {
-        viewModel.articles.observe(viewLifecycleOwner, {
-            binding.swipeRefresh.isRefreshing = false
-            articlesAdapter.submitList(it)
-        })
-        viewModel.getArticlesFailed.observe(viewLifecycleOwner, EventObserver {
-            binding.swipeRefresh.isRefreshing = false
-            val errorMessage = getString(R.string.error_unable_to_get_articles)
-            showErrorMessage(errorMessage)
-        })
+        viewModel.getTopHeadLinesState.observe(viewLifecycleOwner, this::renderGetTopHeadLinesState)
+        viewModel.refreshTopHeadLinesAction.observe(
+            viewLifecycleOwner,
+            EventObserver(this::renderRefreshTopHeadLinesAction)
+        )
+    }
+
+    private fun renderGetTopHeadLinesState(state: GetTopHeadLinesState) {
+        when (state) {
+            is GetTopHeadLinesState.Loading -> {
+
+            }
+            is GetTopHeadLinesState.Success -> {
+                binding.swipeRefresh.isRefreshing = false
+                articlesAdapter.submitList(state.articles)
+            }
+            is GetTopHeadLinesState.Error -> {
+
+            }
+        }
+    }
+
+    private fun renderRefreshTopHeadLinesAction(action: RefreshTopHeadLinesAction) {
+        binding.swipeRefresh.isRefreshing = false
+        if (action is RefreshTopHeadLinesAction.Error) {
+            showErrorMessage(action.message)
+        }
     }
 
     private fun showErrorMessage(errorMessage: String) {

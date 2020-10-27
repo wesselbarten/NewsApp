@@ -6,16 +6,15 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import dev.olog.flow.test.observer.test
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import nl.wesselbarten.newsapp.data.Result
 import nl.wesselbarten.newsapp.data.source.ArticlesDataSource
 import nl.wesselbarten.newsapp.domain.model.Article
+import nl.wesselbarten.newsapp.suspendAndAwait
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class DefaultArticleRepositoryTest {
@@ -37,8 +36,7 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        suspendCoroutine<Unit> { continuation ->
-            this.launch {
+        suspendAndAwait<Unit> { continuation ->
                 articleRepository.getTopHeadLines().test(this) {
                     assertNoErrors()
                     assertNotComplete()
@@ -47,7 +45,6 @@ class DefaultArticleRepositoryTest {
                     assertValue { (it as Result.Success).data.first().title == articles.first().title }
                     continuation.resume(Unit)
                 }
-            }
         }
 
         verify(mockArticlesDataSource, times(1)).getTopHeadlines()
@@ -65,29 +62,32 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        articleRepository.getTopHeadLines().test(this) {
-            assertValue { it is Result.Error }
+        suspendAndAwait<Unit> { continuation ->
+            articleRepository.getTopHeadLines().test(this) {
+                assertValue { it is Result.Error }
+                continuation.resume(Unit)
+            }
         }
 
         verify(mockArticlesDataSource, times(1)).getTopHeadlines()
     }
 
     @Test
-    fun `test get top headlines from cache returns successful result`() = runBlockingTest(testDispatcher) {
-        val articles = listOf(fixture<Article>())
+    fun `test get top headlines from cache returns successful result`() =
+        runBlockingTest(testDispatcher) {
+            val articles = listOf(fixture<Article>())
 
-        val mockArticlesDataSource = mock<ArticlesDataSource> {
-            whenever(mock.getTopHeadlines())
-                .thenReturn(Result.Success(articles))
-        }
+            val mockArticlesDataSource = mock<ArticlesDataSource> {
+                whenever(mock.getTopHeadlines())
+                    .thenReturn(Result.Success(articles))
+            }
 
-        val articleRepository = DefaultArticleRepository(
-            mockArticlesDataSource,
-            testDispatcher
-        )
+            val articleRepository = DefaultArticleRepository(
+                mockArticlesDataSource,
+                testDispatcher
+            )
 
-        suspendCoroutine<Unit> { continuation ->
-            this.launch {
+            suspendAndAwait<Unit> { continuation ->
                 articleRepository.getTopHeadLines().test(this) {
                     assertNoErrors()
                     assertNotComplete()
@@ -97,10 +97,8 @@ class DefaultArticleRepositoryTest {
                     continuation.resume(Unit)
                 }
             }
-        }
 
-        suspendCoroutine<Unit> { continuation ->
-            this.launch {
+            suspendAndAwait<Unit> { continuation ->
                 articleRepository.getTopHeadLines().test(this) {
                     assertNoErrors()
                     assertNotComplete()
@@ -110,10 +108,9 @@ class DefaultArticleRepositoryTest {
                     continuation.resume(Unit)
                 }
             }
-        }
 
-        verify(mockArticlesDataSource, times(1)).getTopHeadlines()
-    }
+            verify(mockArticlesDataSource, times(1)).getTopHeadlines()
+        }
 
     @Test
     fun `test refresh top headlines returns successful result`() = runBlockingTest(testDispatcher) {
@@ -129,32 +126,28 @@ class DefaultArticleRepositoryTest {
             testDispatcher
         )
 
-        suspendCoroutine<Unit> { continuation ->
-            this.launch {
-                articleRepository.getTopHeadLines().test(this) {
-                    assertNoErrors()
-                    assertNotComplete()
-                    assertValue { it is Result.Success }
-                    assertValue { (it as Result.Success).data.size == articles.size }
-                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
-                    continuation.resume(Unit)
-                }
+        suspendAndAwait<Unit> { continuation ->
+            articleRepository.getTopHeadLines().test(this) {
+                assertNoErrors()
+                assertNotComplete()
+                assertValue { it is Result.Success }
+                assertValue { (it as Result.Success).data.size == articles.size }
+                assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                continuation.resume(Unit)
             }
         }
 
         val refreshResult = articleRepository.refreshTopHeadLines()
         assertTrue(refreshResult is Result.Success)
 
-        suspendCoroutine<Unit> { continuation ->
-            this.launch {
-                articleRepository.getTopHeadLines().test(this) {
-                    assertNoErrors()
-                    assertNotComplete()
-                    assertValue { it is Result.Success }
-                    assertValue { (it as Result.Success).data.size == articles.size }
-                    assertValue { (it as Result.Success).data.first().title == articles.first().title }
-                    continuation.resume(Unit)
-                }
+        suspendAndAwait<Unit> { continuation ->
+            articleRepository.getTopHeadLines().test(this) {
+                assertNoErrors()
+                assertNotComplete()
+                assertValue { it is Result.Success }
+                assertValue { (it as Result.Success).data.size == articles.size }
+                assertValue { (it as Result.Success).data.first().title == articles.first().title }
+                continuation.resume(Unit)
             }
         }
 

@@ -1,4 +1,4 @@
-package nl.wesselbarten.newsapp.news.detail
+package nl.wesselbarten.newsapp.presentation.news.detail
 
 import android.content.Intent
 import android.net.Uri
@@ -12,7 +12,7 @@ import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import nl.wesselbarten.newsapp.databinding.FragmentArticleDetailBinding
 import nl.wesselbarten.newsapp.domain.model.Article
-import nl.wesselbarten.newsapp.news.NewsViewModel
+import nl.wesselbarten.newsapp.presentation.news.NewsViewModel
 
 @AndroidEntryPoint
 class ArticleDetailFragment : Fragment() {
